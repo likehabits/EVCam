@@ -30,6 +30,7 @@ import com.kooo.evcam.camera.MultiCameraManager;
 import com.kooo.evcam.dingtalk.DingTalkApiClient;
 import com.kooo.evcam.dingtalk.DingTalkConfig;
 import com.kooo.evcam.dingtalk.DingTalkStreamManager;
+import com.kooo.evcam.dingtalk.PhotoUploadService;
 import com.kooo.evcam.dingtalk.VideoUploadService;
 
 import java.io.BufferedReader;
@@ -63,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private AutoFitTextureView textureFront, textureBack, textureLeft, textureRight;
-    private Button btnStartRecord, btnStopRecord;
+    private Button btnStartRecord, btnStopRecord, btnTakePhoto;
     private MultiCameraManager cameraManager;
     private int textureReadyCount = 0;  // 记录准备好的TextureView数量
 
@@ -124,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
         textureRight = findViewById(R.id.texture_right);
         btnStartRecord = findViewById(R.id.btn_start_record);
         btnStopRecord = findViewById(R.id.btn_stop_record);
+        btnTakePhoto = findViewById(R.id.btn_take_photo);
 
         // 菜单按钮点击事件
         findViewById(R.id.btn_menu).setOnClickListener(v -> {
@@ -136,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnStartRecord.setOnClickListener(v -> startRecording());
         btnStopRecord.setOnClickListener(v -> stopRecording());
+        btnTakePhoto.setOnClickListener(v -> takePicture());
 
         // 为每个TextureView添加Surface监听器
         TextureView.SurfaceTextureListener surfaceTextureListener = new TextureView.SurfaceTextureListener() {
@@ -187,6 +190,9 @@ public class MainActivity extends AppCompatActivity {
             } else if (itemId == R.id.nav_playback) {
                 // 显示回看界面
                 showPlaybackInterface();
+            } else if (itemId == R.id.nav_photo_playback) {
+                // 显示图片回看界面
+                showPhotoPlaybackInterface();
             } else if (itemId == R.id.nav_remote_view) {
                 // 显示远程查看界面
                 showRemoteViewInterface();
@@ -226,6 +232,21 @@ public class MainActivity extends AppCompatActivity {
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction transaction = fragmentManager.beginTransaction();
         transaction.replace(R.id.fragment_container, new PlaybackFragment());
+        transaction.commit();
+    }
+
+    /**
+     * 显示图片回看界面
+     */
+    private void showPhotoPlaybackInterface() {
+        // 隐藏录制布局，显示Fragment容器
+        recordingLayout.setVisibility(View.GONE);
+        fragmentContainer.setVisibility(View.VISIBLE);
+
+        // 显示PhotoPlaybackFragment
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.replace(R.id.fragment_container, new PhotoPlaybackFragment());
         transaction.commit();
     }
 
@@ -492,6 +513,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void takePicture() {
+        if (cameraManager != null) {
+            cameraManager.takePicture();
+            Toast.makeText(this, "拍照完成", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Picture taken");
+        }
+    }
+
     /**
      * 远程录制（由钉钉指令触发）
      * 自动录制 1 分钟视频并上传到钉钉
@@ -542,6 +571,32 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * 远程拍照（由钉钉指令触发）
+     * 拍摄照片并上传到钉钉
+     */
+    public void startRemotePhoto(String conversationId, String conversationType, String userId) {
+        this.remoteConversationId = conversationId;
+        this.remoteConversationType = conversationType;
+        this.remoteUserId = userId;
+
+        Log.d(TAG, "收到远程拍照指令，开始拍照...");
+
+        // 拍照
+        if (cameraManager != null) {
+            cameraManager.takePicture();
+            Log.d(TAG, "远程拍照已执行");
+
+            // 等待拍照完成后上传
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                uploadPhotos();
+            }, 2000);  // 等待2秒确保照片保存完成
+        } else {
+            Log.e(TAG, "摄像头未初始化");
+            sendErrorToRemote("摄像头未初始化");
+        }
+    }
+
+    /**
      * 上传录制的视频到钉钉
      */
     private void uploadRecordedVideos() {
@@ -549,7 +604,7 @@ public class MainActivity extends AppCompatActivity {
 
         // 获取录制的视频文件
         File videoDir = new File(android.os.Environment.getExternalStoragePublicDirectory(
-                android.os.Environment.DIRECTORY_DCIM), "MultiCam");
+                android.os.Environment.DIRECTORY_DCIM), "EVCam_Video");
 
         if (!videoDir.exists() || !videoDir.isDirectory()) {
             Log.e(TAG, "视频目录不存在");
@@ -595,6 +650,74 @@ public class MainActivity extends AppCompatActivity {
                 public void onSuccess(String message) {
                     Log.d(TAG, message);
                     runOnUiThread(() -> Toast.makeText(MainActivity.this, "视频上传成功", Toast.LENGTH_SHORT).show());
+                }
+
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "上传失败: " + error);
+                    sendErrorToRemote("上传失败: " + error);
+                }
+            });
+        } else {
+            Log.e(TAG, "钉钉服务未启动");
+            sendErrorToRemote("钉钉服务未启动");
+        }
+    }
+
+    /**
+     * 上传拍摄的照片到钉钉
+     */
+    private void uploadPhotos() {
+        Log.d(TAG, "开始上传照片到钉钉...");
+
+        // 获取照片文件
+        File photoDir = new File(android.os.Environment.getExternalStoragePublicDirectory(
+                android.os.Environment.DIRECTORY_DCIM), "EVCam_Photo");
+
+        if (!photoDir.exists() || !photoDir.isDirectory()) {
+            Log.e(TAG, "照片目录不存在");
+            sendErrorToRemote("照片目录不存在");
+            return;
+        }
+
+        // 获取最新的照片文件（最近 10 秒内创建的）
+        File[] files = photoDir.listFiles((dir, name) -> name.endsWith(".jpg"));
+        if (files == null || files.length == 0) {
+            Log.e(TAG, "没有找到照片文件");
+            sendErrorToRemote("没有找到照片文件");
+            return;
+        }
+
+        // 筛选最近 10 秒内的文件
+        long currentTime = System.currentTimeMillis();
+        List<File> recentFiles = new ArrayList<>();
+        for (File file : files) {
+            if (currentTime - file.lastModified() < 10 * 1000) {  // 10 秒内
+                recentFiles.add(file);
+            }
+        }
+
+        if (recentFiles.isEmpty()) {
+            Log.e(TAG, "没有找到最近拍摄的照片");
+            sendErrorToRemote("没有找到最近拍摄的照片");
+            return;
+        }
+
+        Log.d(TAG, "找到 " + recentFiles.size() + " 张照片");
+
+        // 使用 Activity 级别的 API 客户端
+        if (dingTalkApiClient != null && remoteConversationId != null) {
+            PhotoUploadService uploadService = new PhotoUploadService(this, dingTalkApiClient);
+            uploadService.uploadPhotos(recentFiles, remoteConversationId, remoteConversationType, remoteUserId, new PhotoUploadService.UploadCallback() {
+                @Override
+                public void onProgress(String message) {
+                    Log.d(TAG, message);
+                }
+
+                @Override
+                public void onSuccess(String message) {
+                    Log.d(TAG, message);
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "照片上传成功", Toast.LENGTH_SHORT).show());
                 }
 
                 @Override
@@ -681,8 +804,16 @@ public class MainActivity extends AppCompatActivity {
         };
 
         // 创建指令回调
-        DingTalkStreamManager.CommandCallback commandCallback = (conversationId, conversationType, userId) -> {
-            startRemoteRecording(conversationId, conversationType, userId);
+        DingTalkStreamManager.CommandCallback commandCallback = new DingTalkStreamManager.CommandCallback() {
+            @Override
+            public void onRecordCommand(String conversationId, String conversationType, String userId) {
+                startRemoteRecording(conversationId, conversationType, userId);
+            }
+
+            @Override
+            public void onPhotoCommand(String conversationId, String conversationType, String userId) {
+                startRemotePhoto(conversationId, conversationType, userId);
+            }
         };
 
         // 创建并启动 Stream 管理器（启用自动重连）

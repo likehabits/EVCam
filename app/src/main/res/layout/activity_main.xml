@@ -26,7 +26,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="8dp"
-        android:background="#2A2A2A">
+        android:background="@color/menu_background">
 
         <Button
             android:id="@+id/btn_menu"
@@ -35,7 +35,9 @@
             android:text="☰"
             android:textSize="18sp"
             android:minWidth="48dp"
-            android:minHeight="48dp" />
+            android:minHeight="48dp"
+            android:backgroundTint="@color/button_background"
+            android:textColor="@color/button_text" />
     </LinearLayout>
 
     <!-- 摄像头显示区域：左侧前后，右侧左右 -->
@@ -191,26 +193,46 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="16dp"
-        android:background="#1A1A1A">
+        android:gravity="center"
+        android:background="@color/menu_background">
 
         <Button
             android:id="@+id/btn_start_record"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginEnd="8dp"
             android:text="开始录制"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:backgroundTint="@color/button_background"
+            android:textColor="@color/button_text" />
+
+        <Button
+            android:id="@+id/btn_take_photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="拍照"
+            android:textSize="16sp"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:backgroundTint="@color/button_background"
+            android:textColor="@color/button_text" />
 
         <Button
             android:id="@+id/btn_stop_record"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:text="停止录制"
             android:enabled="false"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:backgroundTint="@color/button_background"
+            android:textColor="@color/button_text" />
     </LinearLayout>
 
 </LinearLayout>

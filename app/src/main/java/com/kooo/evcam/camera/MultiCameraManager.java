@@ -75,10 +75,21 @@ public class MultiCameraManager {
                            String rightId, TextureView rightView) {
 
         // 创建四个摄像头实例
-        cameras.put("front", new SingleCamera(context, frontId, frontView));
-        cameras.put("back", new SingleCamera(context, backId, backView));
-        cameras.put("left", new SingleCamera(context, leftId, leftView));
-        cameras.put("right", new SingleCamera(context, rightId, rightView));
+        SingleCamera frontCamera = new SingleCamera(context, frontId, frontView);
+        frontCamera.setCameraPosition("front");
+        cameras.put("front", frontCamera);
+
+        SingleCamera backCamera = new SingleCamera(context, backId, backView);
+        backCamera.setCameraPosition("back");
+        cameras.put("back", backCamera);
+
+        SingleCamera leftCamera = new SingleCamera(context, leftId, leftView);
+        leftCamera.setCameraPosition("left");
+        cameras.put("left", leftCamera);
+
+        SingleCamera rightCamera = new SingleCamera(context, rightId, rightView);
+        rightCamera.setCameraPosition("right");
+        cameras.put("right", rightCamera);
 
         // 为每个摄像头设置回调
         CameraCallback callback = new CameraCallback() {
@@ -329,7 +340,7 @@ public class MultiCameraManager {
             return false;
         }
 
-        File saveDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "MultiCam");
+        File saveDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "EVCam_Video");
         if (!saveDir.exists()) {
             saveDir.mkdirs();
         }
@@ -506,6 +517,25 @@ public class MultiCameraManager {
      */
     public boolean isRecording() {
         return isRecording;
+    }
+
+    /**
+     * 拍照（所有活动的摄像头同时拍照）
+     */
+    public void takePicture() {
+        List<String> keys = getActiveCameraKeys();
+        if (keys.isEmpty()) {
+            Log.e(TAG, "No active cameras for taking picture");
+            return;
+        }
+
+        Log.d(TAG, "Taking picture with " + keys.size() + " camera(s)");
+        for (String key : keys) {
+            SingleCamera camera = cameras.get(key);
+            if (camera != null && camera.isConnected()) {
+                camera.takePicture();
+            }
+        }
     }
 
     private List<String> getActiveCameraKeys() {

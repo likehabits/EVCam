@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="176dp"
-    android:background="#2A2A2A"
+    android:background="@color/nav_header_background"
     android:gravity="bottom"
     android:orientation="vertical"
     android:padding="16dp"
@@ -20,7 +20,7 @@
         android:paddingTop="8dp"
         android:text="电车记录仪"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/text_primary"
         android:textSize="16sp"
         android:textStyle="bold" />
 

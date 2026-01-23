@@ -24,31 +24,31 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * 视频回看Fragment
+ * 图片回看Fragment
  */
-public class PlaybackFragment extends Fragment {
-    private RecyclerView videoList;
+public class PhotoPlaybackFragment extends Fragment {
+    private RecyclerView photoList;
     private TextView emptyText;
     private Button btnRefresh;
     private Button btnMenu;
-    private VideoAdapter adapter;
-    private List<File> videoFiles = new ArrayList<>();
+    private PhotoAdapter adapter;
+    private List<File> photoFiles = new ArrayList<>();
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_playback, container, false);
+        View view = inflater.inflate(R.layout.fragment_photo_playback, container, false);
 
-        videoList = view.findViewById(R.id.video_list);
+        photoList = view.findViewById(R.id.photo_list);
         emptyText = view.findViewById(R.id.empty_text);
         btnRefresh = view.findViewById(R.id.btn_refresh);
         btnMenu = view.findViewById(R.id.btn_menu);
 
         // 设置RecyclerView为网格布局（4列）
-        videoList.setLayoutManager(new GridLayoutManager(getContext(), 4));
-        adapter = new VideoAdapter(getContext(), videoFiles);
-        adapter.setOnVideoDeleteListener(this::updateVideoList);
-        videoList.setAdapter(adapter);
+        photoList.setLayoutManager(new GridLayoutManager(getContext(), 4));
+        adapter = new PhotoAdapter(getContext(), photoFiles);
+        adapter.setOnPhotoDeleteListener(this::updatePhotoList);
+        photoList.setAdapter(adapter);
 
         // 菜单按钮
         btnMenu.setOnClickListener(v -> {
@@ -65,29 +65,32 @@ public class PlaybackFragment extends Fragment {
         });
 
         // 刷新按钮
-        btnRefresh.setOnClickListener(v -> updateVideoList());
+        btnRefresh.setOnClickListener(v -> updatePhotoList());
 
-        // 加载视频列表
-        updateVideoList();
+        // 加载照片列表
+        updatePhotoList();
 
         return view;
     }
 
     /**
-     * 更新视频列表
+     * 更新照片列表
      */
-    private void updateVideoList() {
-        videoFiles.clear();
+    private void updatePhotoList() {
+        photoFiles.clear();
 
         // 获取保存目录
-        File saveDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "EVCam_Video");
+        File saveDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "EVCam_Photo");
         if (saveDir.exists() && saveDir.isDirectory()) {
-            File[] files = saveDir.listFiles((dir, name) -> name.toLowerCase().endsWith(".mp4"));
+            File[] files = saveDir.listFiles((dir, name) -> {
+                String lowerName = name.toLowerCase();
+                return lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg") || lowerName.endsWith(".png");
+            });
             if (files != null && files.length > 0) {
-                videoFiles.addAll(Arrays.asList(files));
+                photoFiles.addAll(Arrays.asList(files));
 
                 // 按修改时间倒序排序（最新的在前）
-                Collections.sort(videoFiles, new Comparator<File>() {
+                Collections.sort(photoFiles, new Comparator<File>() {
                     @Override
                     public int compare(File f1, File f2) {
                         return Long.compare(f2.lastModified(), f1.lastModified());
@@ -97,11 +100,11 @@ public class PlaybackFragment extends Fragment {
         }
 
         // 更新UI
-        if (videoFiles.isEmpty()) {
-            videoList.setVisibility(View.GONE);
+        if (photoFiles.isEmpty()) {
+            photoList.setVisibility(View.GONE);
             emptyText.setVisibility(View.VISIBLE);
         } else {
-            videoList.setVisibility(View.VISIBLE);
+            photoList.setVisibility(View.VISIBLE);
             emptyText.setVisibility(View.GONE);
         }
 

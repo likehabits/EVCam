@@ -46,6 +46,7 @@ public class DingTalkStreamManager {
 
     public interface CommandCallback {
         void onRecordCommand(String conversationId, String conversationType, String userId);
+        void onPhotoCommand(String conversationId, String conversationType, String userId);
     }
 
     public DingTalkStreamManager(Context context, DingTalkConfig config,
@@ -279,10 +280,23 @@ public class DingTalkStreamManager {
                     String finalSenderId = senderId;
                     mainHandler.post(() -> commandCallback.onRecordCommand(finalConversationId, finalConversationType, finalSenderId));
 
+                } else if ("拍照".equals(command) || "photo".equalsIgnoreCase(command)) {
+                    Log.d(TAG, "收到拍照指令");
+
+                    // 发送确认消息
+                    sendResponse(sessionWebhook, "收到拍照指令，正在拍照...");
+
+                    // 通知监听器执行拍照，传递 conversationType 和 senderId
+                    String finalConversationId = conversationId;
+                    String finalConversationType = conversationType;
+                    String finalSenderId = senderId;
+                    mainHandler.post(() -> commandCallback.onPhotoCommand(finalConversationId, finalConversationType, finalSenderId));
+
                 } else if ("帮助".equals(command) || "help".equalsIgnoreCase(command)) {
                     sendResponse(sessionWebhook,
                         "可用指令：\n" +
                         "• 录制 - 开始录制 1 分钟视频\n" +
+                        "• 拍照 - 拍摄照片\n" +
                         "• 帮助 - 显示此帮助信息");
 
                 } else {

@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#000000">
+    android:background="@color/page_background">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,7 +16,9 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginBottom="24dp">
+            android:layout_marginBottom="24dp"
+            android:background="@color/menu_background"
+            android:padding="8dp">
 
             <Button
                 android:id="@+id/btn_menu"
@@ -26,14 +28,16 @@
                 android:textSize="18sp"
                 android:minWidth="48dp"
                 android:minHeight="48dp"
-                android:layout_marginEnd="12dp" />
+                android:layout_marginEnd="12dp"
+                android:backgroundTint="@color/button_background"
+                android:textColor="@color/button_text" />
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="钉钉远程查看配置"
-                android:textColor="#FFFFFF"
+                android:textColor="@color/text_primary"
                 android:textSize="20sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -43,7 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="ClientId / AppKey"
-            android:textColor="#CCCCCC"
+            android:textColor="@color/text_secondary"
             android:textSize="14sp"
             android:layout_marginBottom="8dp" />
 
@@ -52,8 +56,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="请输入钉钉应用的 ClientId (也叫 AppKey)"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#666666"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary"
             android:background="@android:drawable/edit_text"
             android:padding="12dp"
             android:layout_marginBottom="16dp" />
@@ -63,7 +67,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="ClientSecret / AppSecret"
-            android:textColor="#CCCCCC"
+            android:textColor="@color/text_secondary"
             android:textSize="14sp"
             android:layout_marginBottom="8dp" />
 
@@ -72,8 +76,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="请输入钉钉应用的 ClientSecret (也叫 AppSecret)"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#666666"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary"
             android:background="@android:drawable/edit_text"
             android:padding="12dp"
             android:inputType="textPassword"
@@ -86,7 +90,9 @@
             android:layout_height="wrap_content"
             android:text="保存配置"
             android:textSize="16sp"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="@color/button_background"
+            android:textColor="@color/button_text" />
 
         <!-- 自动启动开关 -->
         <LinearLayout
@@ -96,7 +102,7 @@
             android:gravity="center_vertical"
             android:layout_marginBottom="16dp"
             android:padding="12dp"
-            android:background="@android:drawable/dialog_holo_dark_frame">
+            android:background="@color/card_background">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -108,7 +114,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="自动启动服务"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@color/text_primary"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -116,7 +122,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="应用启动时自动连接钉钉服务，并在断线时自动重连"
-                    android:textColor="#CCCCCC"
+                    android:textColor="@color/text_secondary"
                     android:textSize="12sp"
                     android:layout_marginTop="4dp" />
             </LinearLayout>
@@ -140,7 +146,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="连接状态："
-                android:textColor="#CCCCCC"
+                android:textColor="@color/text_secondary"
                 android:textSize="14sp" />
 
             <TextView
@@ -167,7 +173,9 @@
                 android:layout_weight="1"
                 android:text="启动服务"
                 android:textSize="16sp"
-                android:layout_marginEnd="8dp" />
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/button_background"
+                android:textColor="@color/button_text" />
 
             <Button
                 android:id="@+id/btn_stop_service"
@@ -177,7 +185,9 @@
                 android:text="停止服务"
                 android:textSize="16sp"
                 android:enabled="false"
-                android:layout_marginStart="8dp" />
+                android:layout_marginStart="8dp"
+                android:backgroundTint="@color/button_background"
+                android:textColor="@color/button_text" />
         </LinearLayout>
 
         <!-- 使用说明 -->
@@ -185,7 +195,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="使用说明"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/text_primary"
             android:textSize="16sp"
             android:textStyle="bold"
             android:layout_marginTop="24dp"
@@ -195,7 +205,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="1. 在钉钉开放平台创建企业内部应用\n2. 开启机器人能力并配置 Stream 模式\n3. 将应用的 ClientId 和 ClientSecret 填入上方\n4. 保存配置并启动服务\n5. 在钉钉群聊中 @机器人 发送「录制」指令\n6. 设备将自动录制 1 分钟视频并上传到钉钉群"
-            android:textColor="#CCCCCC"
+            android:textColor="@color/text_secondary"
             android:textSize="14sp"
             android:lineSpacingExtra="4dp" />
 

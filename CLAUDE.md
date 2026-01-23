@@ -57,10 +57,16 @@ adb shell pm grant com.test.cam android.permission.RECORD_AUDIO
 adb shell pm grant com.test.cam android.permission.WRITE_EXTERNAL_STORAGE
 
 # Check recorded videos on device
-adb shell ls -la /sdcard/DCIM/MultiCam/
+adb shell ls -la /sdcard/DCIM/EVCam_Video/
 
 # Pull recorded videos from device
-adb pull /sdcard/DCIM/MultiCam/ ./recordings/
+adb pull /sdcard/DCIM/EVCam_Video/ ./recordings/
+
+# Check photos on device
+adb shell ls -la /sdcard/DCIM/EVCam_Photo/
+
+# Pull photos from device
+adb pull /sdcard/DCIM/EVCam_Photo/ ./photos/
 ```
 
 ## Architecture
@@ -93,8 +99,14 @@ The application follows a layered architecture with clear separation between UI,
 **VideoRecorder** ([VideoRecorder.java](app/src/main/java/com/test/cam/camera/VideoRecorder.java))
 - Encapsulates MediaRecorder for video recording
 - Configuration: MP4 format, H.264 encoding, 1Mbps bitrate, 30fps
-- Saves to: `/DCIM/MultiCam/` directory
-- Filename format: `camera_{cameraId}_{timestamp}.mp4`
+- Saves to: `/DCIM/EVCam_Video/` directory
+- Filename format: `yyyyMMdd_HHmmss_{position}.mp4` (e.g., `20260123_151030_front.mp4`)
+
+**Photo Capture**
+- Uses ImageReader for capturing still images
+- Saves to: `/DCIM/EVCam_Photo/` directory
+- Filename format: `yyyyMMdd_HHmmss_{position}.jpg` (e.g., `20260123_151030_back.jpg`)
+- Resolution: Same as preview (1280x800)
 
 ### Camera Initialization Flow
 
@@ -191,10 +203,15 @@ The app includes comprehensive error handling:
 - Respect maxOpenCameras limit (some devices can't open 4 simultaneously)
 
 ### Recording Fails
-- Verify DCIM/MultiCam directory is writable
+- Verify DCIM/EVCam_Video directory is writable
 - Check that camera is opened and preview is running before starting recording
 - Ensure MediaRecorder configuration matches camera capabilities
 - Confirm audio permission is granted if recording with audio
+
+### Photo Capture Fails
+- Verify DCIM/EVCam_Photo directory is writable
+- Check that ImageReader is properly initialized in camera session
+- Ensure camera is opened and preview is running before taking photos
 
 ### Preview Not Showing
 - Verify TextureView dimensions are non-zero

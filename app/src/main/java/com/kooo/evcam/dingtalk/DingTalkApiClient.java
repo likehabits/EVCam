@@ -542,6 +542,213 @@ public class DingTalkApiClient {
     }
 
     /**
+     * 发送图片消息（自动判断群聊或单聊）
+     * @param conversationId 会话ID
+     * @param conversationType 会话类型（"1"=单聊，"2"=群聊）
+     * @param photoURL 图片URL（钉钉上传后的URL）
+     * @param userId 用户ID（单聊时必需）
+     */
+    public void sendImageMessage(String conversationId, String conversationType, String photoURL, String userId) throws IOException {
+        if (isGroupConversation(conversationType)) {
+            // 群聊：使用群聊 API
+            sendImageMessageToGroup(conversationId, photoURL);
+        } else {
+            // 单聊：使用单聊 API
+            if (userId == null || userId.isEmpty()) {
+                throw new IOException("发送单聊图片消息需要提供 userId");
+            }
+            sendImageMessageToUser(userId, photoURL);
+        }
+    }
+
+    /**
+     * 发送图片消息到群聊
+     */
+    private void sendImageMessageToGroup(String conversationId, String photoURL) throws IOException {
+        String accessToken = getAccessToken();
+        String url = BASE_URL + "/v1.0/robot/groupMessages/send";
+
+        // 构建消息参数
+        JsonObject msgParam = new JsonObject();
+        msgParam.addProperty("photoURL", photoURL);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("robotCode", config.getClientId());
+        body.addProperty("openConversationId", conversationId);
+        body.addProperty("msgKey", "sampleImageMsg");
+        body.addProperty("msgParam", gson.toJson(msgParam));
+
+        String requestJson = gson.toJson(body);
+        Log.d(TAG, "发送群聊图片消息请求: " + requestJson);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .header("x-acs-dingtalk-access-token", accessToken)
+                .post(RequestBody.create(
+                        MediaType.parse("application/json"),
+                        requestJson
+                ))
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            String responseBody = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                Log.e(TAG, "发送群聊图片消息失败，响应: " + responseBody);
+                throw new IOException("发送群聊图片消息失败: " + response.code() + ", " + responseBody);
+            }
+            Log.d(TAG, "群聊图片消息发送成功，响应: " + responseBody);
+        }
+    }
+
+    /**
+     * 发送图片消息到单聊
+     */
+    private void sendImageMessageToUser(String userId, String photoURL) throws IOException {
+        String accessToken = getAccessToken();
+        String url = BASE_URL + "/v1.0/robot/oToMessages/batchSend";
+
+        // 构建消息参数
+        JsonObject msgParam = new JsonObject();
+        msgParam.addProperty("photoURL", photoURL);
+
+        // 构建 userIds 数组
+        com.google.gson.JsonArray userIds = new com.google.gson.JsonArray();
+        userIds.add(userId);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("robotCode", config.getClientId());
+        body.add("userIds", userIds);
+        body.addProperty("msgKey", "sampleImageMsg");
+        body.addProperty("msgParam", gson.toJson(msgParam));
+
+        String requestJson = gson.toJson(body);
+        Log.d(TAG, "发送单聊图片消息请求: " + requestJson);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .header("x-acs-dingtalk-access-token", accessToken)
+                .post(RequestBody.create(
+                        MediaType.parse("application/json"),
+                        requestJson
+                ))
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            String responseBody = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                Log.e(TAG, "发送单聊图片消息失败，响应: " + responseBody);
+                throw new IOException("发送单聊图片消息失败: " + response.code() + ", " + responseBody);
+            }
+            Log.d(TAG, "单聊图片消息发送成功，响应: " + responseBody);
+        }
+    }
+
+    /**
+     * 发送Markdown消息（自动判断群聊或单聊）
+     * @param conversationId 会话ID
+     * @param conversationType 会话类型（"1"=单聊，"2"=群聊）
+     * @param title 标题
+     * @param text Markdown文本
+     * @param userId 用户ID（单聊时必需）
+     */
+    public void sendMarkdownMessage(String conversationId, String conversationType, String title, String text, String userId) throws IOException {
+        if (isGroupConversation(conversationType)) {
+            // 群聊：使用群聊 API
+            sendMarkdownMessageToGroup(conversationId, title, text);
+        } else {
+            // 单聊：使用单聊 API
+            if (userId == null || userId.isEmpty()) {
+                throw new IOException("发送单聊Markdown消息需要提供 userId");
+            }
+            sendMarkdownMessageToUser(userId, title, text);
+        }
+    }
+
+    /**
+     * 发送Markdown消息到群聊
+     */
+    private void sendMarkdownMessageToGroup(String conversationId, String title, String text) throws IOException {
+        String accessToken = getAccessToken();
+        String url = BASE_URL + "/v1.0/robot/groupMessages/send";
+
+        // 构建消息参数
+        JsonObject msgParam = new JsonObject();
+        msgParam.addProperty("title", title);
+        msgParam.addProperty("text", text);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("robotCode", config.getClientId());
+        body.addProperty("openConversationId", conversationId);
+        body.addProperty("msgKey", "sampleMarkdown");
+        body.addProperty("msgParam", gson.toJson(msgParam));
+
+        String requestJson = gson.toJson(body);
+        Log.d(TAG, "发送群聊Markdown消息请求: " + requestJson);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .header("x-acs-dingtalk-access-token", accessToken)
+                .post(RequestBody.create(
+                        MediaType.parse("application/json"),
+                        requestJson
+                ))
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            String responseBody = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                Log.e(TAG, "发送群聊Markdown消息失败，响应: " + responseBody);
+                throw new IOException("发送群聊Markdown消息失败: " + response.code() + ", " + responseBody);
+            }
+            Log.d(TAG, "群聊Markdown消息发送成功，响应: " + responseBody);
+        }
+    }
+
+    /**
+     * 发送Markdown消息到单聊
+     */
+    private void sendMarkdownMessageToUser(String userId, String title, String text) throws IOException {
+        String accessToken = getAccessToken();
+        String url = BASE_URL + "/v1.0/robot/oToMessages/batchSend";
+
+        // 构建消息参数
+        JsonObject msgParam = new JsonObject();
+        msgParam.addProperty("title", title);
+        msgParam.addProperty("text", text);
+
+        // 构建 userIds 数组
+        com.google.gson.JsonArray userIds = new com.google.gson.JsonArray();
+        userIds.add(userId);
+
+        JsonObject body = new JsonObject();
+        body.addProperty("robotCode", config.getClientId());
+        body.add("userIds", userIds);
+        body.addProperty("msgKey", "sampleMarkdown");
+        body.addProperty("msgParam", gson.toJson(msgParam));
+
+        String requestJson = gson.toJson(body);
+        Log.d(TAG, "发送单聊Markdown消息请求: " + requestJson);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .header("x-acs-dingtalk-access-token", accessToken)
+                .post(RequestBody.create(
+                        MediaType.parse("application/json"),
+                        requestJson
+                ))
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            String responseBody = response.body() != null ? response.body().string() : "";
+            if (!response.isSuccessful()) {
+                Log.e(TAG, "发送单聊Markdown消息失败，响应: " + responseBody);
+                throw new IOException("发送单聊Markdown消息失败: " + response.code() + ", " + responseBody);
+            }
+            Log.d(TAG, "单聊Markdown消息发送成功，响应: " + responseBody);
+        }
+    }
+
+    /**
      * Stream 连接信息
      */
     public static class StreamConnection {

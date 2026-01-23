@@ -7,7 +7,11 @@
     <item
         android:id="@+id/nav_playback"
         android:icon="@android:drawable/ic_menu_gallery"
-        android:title="录制回看" />
+        android:title="视频回看" />
+    <item
+        android:id="@+id/nav_photo_playback"
+        android:icon="@android:drawable/ic_menu_gallery"
+        android:title="图片回看" />
     <item
         android:id="@+id/nav_remote_view"
         android:icon="@android:drawable/ic_menu_upload"

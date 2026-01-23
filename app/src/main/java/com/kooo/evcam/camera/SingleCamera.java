@@ -9,7 +9,10 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.Image;
+import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
@@ -19,7 +22,14 @@ import android.view.TextureView;
 
 import androidx.annotation.NonNull;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * 单个摄像头管理类
@@ -31,6 +41,7 @@ public class SingleCamera {
     private final String cameraId;
     private final TextureView textureView;
     private CameraCallback callback;
+    private String cameraPosition;  // 摄像头位置（front/back/left/right）
 
     private CameraManager cameraManager;
     private CameraDevice cameraDevice;
@@ -41,6 +52,7 @@ public class SingleCamera {
     private Size previewSize;
     private Surface recordSurface;  // 录制Surface
     private Surface previewSurface;  // 预览Surface（缓存以避免重复创建）
+    private ImageReader imageReader;  // 用于拍照的ImageReader
 
     private boolean shouldReconnect = false;  // 是否应该重连
     private int reconnectAttempts = 0;  // 重连尝试次数
@@ -57,6 +69,10 @@ public class SingleCamera {
 
     public void setCallback(CameraCallback callback) {
         this.callback = callback;
+    }
+
+    public void setCameraPosition(String position) {
+        this.cameraPosition = position;
     }
 
     public String getCameraId() {
@@ -196,6 +212,17 @@ public class SingleCamera {
                 // 选择合适的分辨率
                 previewSize = chooseOptimalSize(sizes);
                 Log.d(TAG, "Camera " + cameraId + " selected preview size: " + previewSize);
+
+                // 初始化ImageReader用于拍照
+                if (previewSize != null) {
+                    imageReader = ImageReader.newInstance(
+                            previewSize.getWidth(),
+                            previewSize.getHeight(),
+                            ImageFormat.JPEG,
+                            2
+                    );
+                    Log.d(TAG, "Camera " + cameraId + " ImageReader created");
+                }
 
                 // 通知回调预览尺寸已确定
                 if (callback != null && previewSize != null) {
@@ -410,13 +437,21 @@ public class SingleCamera {
             previewRequestBuilder.addTarget(surface);
             Log.d(TAG, "Camera " + cameraId + " Added preview surface to request");
 
-            // 如果有录制Surface，也添加到输出目标
+            // 准备所有输出Surface
             java.util.List<Surface> surfaces = new java.util.ArrayList<>();
             surfaces.add(surface);
+
+            // 如果有录制Surface，也添加到输出目标
             if (recordSurface != null) {
                 surfaces.add(recordSurface);
                 previewRequestBuilder.addTarget(recordSurface);
                 Log.d(TAG, "Added record surface to camera " + cameraId);
+            }
+
+            // 添加ImageReader的Surface用于拍照
+            if (imageReader != null) {
+                surfaces.add(imageReader.getSurface());
+                Log.d(TAG, "Added image reader surface to camera " + cameraId);
             }
 
             Log.d(TAG, "Camera " + cameraId + " Total surfaces: " + surfaces.size());
@@ -490,6 +525,97 @@ public class SingleCamera {
     }
 
     /**
+     * 拍照
+     */
+    public void takePicture() {
+        if (cameraDevice == null || captureSession == null) {
+            Log.e(TAG, "Camera " + cameraId + " not ready for taking picture");
+            return;
+        }
+
+        if (imageReader == null) {
+            Log.e(TAG, "Camera " + cameraId + " ImageReader not initialized");
+            return;
+        }
+
+        try {
+            // 设置ImageReader的回调（如果还没设置）
+            imageReader.setOnImageAvailableListener(reader -> {
+                Image image = null;
+                try {
+                    image = reader.acquireLatestImage();
+                    if (image != null) {
+                        // 保存图像
+                        saveImage(image);
+                    }
+                } finally {
+                    if (image != null) {
+                        image.close();
+                    }
+                }
+            }, backgroundHandler);
+
+            // 创建拍照请求
+            final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            captureBuilder.addTarget(imageReader.getSurface());
+
+            // 设置自动对焦和自动曝光
+            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            captureBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
+
+            // 执行拍照
+            captureSession.capture(captureBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureCompleted(@NonNull CameraCaptureSession session,
+                                              @NonNull CaptureRequest request,
+                                              @NonNull TotalCaptureResult result) {
+                    Log.d(TAG, "Camera " + cameraId + " picture captured");
+                }
+            }, backgroundHandler);
+
+        } catch (CameraAccessException e) {
+            Log.e(TAG, "Failed to take picture for camera " + cameraId, e);
+        }
+    }
+
+    /**
+     * 保存图像到文件
+     */
+    private void saveImage(Image image) {
+        File photoDir = new File(android.os.Environment.getExternalStoragePublicDirectory(
+                android.os.Environment.DIRECTORY_DCIM), "EVCam_Photo");
+        if (!photoDir.exists()) {
+            photoDir.mkdirs();
+        }
+
+        // 使用与视频相同的命名格式：yyyyMMdd_HHmmss_摄像头位置.jpg
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String position = (cameraPosition != null) ? cameraPosition : cameraId;
+        File photoFile = new File(photoDir, timestamp + "_" + position + ".jpg");
+
+        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
+
+        FileOutputStream output = null;
+        try {
+            output = new FileOutputStream(photoFile);
+            output.write(bytes);
+            Log.d(TAG, "Photo saved: " + photoFile.getAbsolutePath());
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to save photo", e);
+        } finally {
+            if (output != null) {
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    Log.e(TAG, "Failed to close output stream", e);
+                }
+            }
+        }
+    }
+
+    /**
      * 关闭摄像头
      */
     public void closeCamera() {
@@ -531,6 +657,17 @@ public class SingleCamera {
                 Log.w(TAG, "Camera " + cameraId + " exception while releasing preview surface: " + e.getMessage());
             }
             previewSurface = null;
+        }
+
+        // 释放ImageReader
+        if (imageReader != null) {
+            try {
+                imageReader.close();
+                Log.d(TAG, "Camera " + cameraId + " released image reader");
+            } catch (Exception e) {
+                Log.w(TAG, "Camera " + cameraId + " exception while closing image reader: " + e.getMessage());
+            }
+            imageReader = null;
         }
 
         stopBackgroundThread();

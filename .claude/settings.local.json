@@ -18,7 +18,9 @@
       "Bash(do git mv:*)",
       "Bash(done)",
       "Bash(git add:*)",
-      "Bash(adb uninstall:*)"
+      "Bash(adb uninstall:*)",
+      "Bash(e:\\e5\\EVCam\\gradlew.bat assembleDebug:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []
