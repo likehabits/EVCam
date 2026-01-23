@@ -1,4 +1,4 @@
-package com.test.cam.camera;
+package com.kooo.evcam.camera;
 
 import android.media.MediaRecorder;
 import android.util.Log;

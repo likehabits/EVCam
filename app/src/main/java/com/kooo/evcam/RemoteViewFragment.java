@@ -1,4 +1,4 @@
-package com.test.cam;
+package com.kooo.evcam;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -16,7 +16,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 
-import com.test.cam.dingtalk.DingTalkConfig;
+import com.kooo.evcam.dingtalk.DingTalkConfig;
 
 public class RemoteViewFragment extends Fragment {
     private static final String TAG = "RemoteViewFragment";

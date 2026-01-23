@@ -1,4 +1,4 @@
-package com.test.cam.camera;
+package com.kooo.evcam.camera;
 
 import android.content.Context;
 import android.graphics.ImageFormat;

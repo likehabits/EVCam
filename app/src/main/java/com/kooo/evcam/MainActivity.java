@@ -1,4 +1,4 @@
-package com.test.cam;
+package com.kooo.evcam;
 
 import android.Manifest;
 import android.content.Context;
@@ -26,11 +26,11 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.material.navigation.NavigationView;
-import com.test.cam.camera.MultiCameraManager;
-import com.test.cam.dingtalk.DingTalkApiClient;
-import com.test.cam.dingtalk.DingTalkConfig;
-import com.test.cam.dingtalk.DingTalkStreamManager;
-import com.test.cam.dingtalk.VideoUploadService;
+import com.kooo.evcam.camera.MultiCameraManager;
+import com.kooo.evcam.dingtalk.DingTalkApiClient;
+import com.kooo.evcam.dingtalk.DingTalkConfig;
+import com.kooo.evcam.dingtalk.DingTalkStreamManager;
+import com.kooo.evcam.dingtalk.VideoUploadService;
 
 import java.io.BufferedReader;
 import java.io.File;

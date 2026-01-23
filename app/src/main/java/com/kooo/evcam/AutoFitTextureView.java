@@ -1,4 +1,4 @@
-package com.test.cam;
+package com.kooo.evcam;
 
 import android.content.Context;
 import android.util.AttributeSet;

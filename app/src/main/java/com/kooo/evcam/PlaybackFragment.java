@@ -1,4 +1,4 @@
-package com.test.cam;
+package com.kooo.evcam;
 
 import android.os.Bundle;
 import android.os.Environment;

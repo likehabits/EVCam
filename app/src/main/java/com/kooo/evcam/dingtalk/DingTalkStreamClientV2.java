@@ -1,4 +1,4 @@
-package com.test.cam.dingtalk;
+package com.kooo.evcam.dingtalk;
 
 /**
  * DISABLED: This class uses internal DingTalk SDK protocol classes that are not available

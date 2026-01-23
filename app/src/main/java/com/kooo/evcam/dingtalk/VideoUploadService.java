@@ -1,4 +1,4 @@
-package com.test.cam.dingtalk;
+package com.kooo.evcam.dingtalk;
 
 import android.content.Context;
 import android.util.Log;

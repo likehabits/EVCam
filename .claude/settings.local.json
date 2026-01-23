@@ -11,7 +11,13 @@
       "Bash(del:*)",
       "Bash(e:\\e5\\cam-master\\cam\\gradlew.bat assembleDebug:*)",
       "Bash(.\\gradlew.bat assembleDebug:*)",
-      "Bash(gradlew.bat clean:*)"
+      "Bash(gradlew.bat clean:*)",
+      "Bash(move:*)",
+      "Bash(git mv:*)",
+      "Bash(for:*)",
+      "Bash(do git mv:*)",
+      "Bash(done)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

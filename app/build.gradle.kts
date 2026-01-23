@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "com.test.cam"
+    namespace = "com.kooo.evcam"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.test.cam"
+        applicationId = "com.kooo.evcam"
         minSdk = 28
         targetSdk = 36
         versionCode = 1
