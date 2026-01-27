@@ -235,20 +235,20 @@ public class StorageHelper {
             }
         }
         
-        // 方法1：通过 getExternalFilesDirs 获取（标准 API，只接受 XXXX-XXXX 格式）
-        File sdRoot = getSdCardFromExternalFilesDirs(context);
+        // 方法1：读取 /proc/mounts（快速可靠，能看到所有挂载的存储设备）
+        File sdRoot = getSdCardFromMounts();
         if (sdRoot != null) {
             return sdRoot;
         }
         
-        // 方法2：扫描 /storage/ 目录（只识别 XXXX-XXXX 格式）
+        // 方法2：通过 getExternalFilesDirs 获取（标准 API，只接受 XXXX-XXXX 格式）
+        sdRoot = getSdCardFromExternalFilesDirs(context);
+        if (sdRoot != null) {
+            return sdRoot;
+        }
+        
+        // 方法3：扫描 /storage/ 目录（只识别 XXXX-XXXX 格式）
         sdRoot = getSdCardFromStorageDir();
-        if (sdRoot != null) {
-            return sdRoot;
-        }
-        
-        // 方法3：检查 /mnt/ 下的传统路径
-        sdRoot = getSdCardFromCommonPaths();
         if (sdRoot != null) {
             return sdRoot;
         }
@@ -258,7 +258,39 @@ public class StorageHelper {
     }
     
     /**
-     * 方法1：通过标准 API getExternalFilesDirs 获取 SD 卡
+     * 方法1：读取 /proc/mounts 查找 SD 卡
+     * 这是最可靠的方法，能看到系统实际挂载的所有存储设备
+     * 只接受 /storage/XXXX-XXXX 格式
+     */
+    private static File getSdCardFromMounts() {
+        try {
+            java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.FileReader("/proc/mounts"));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split("\\s+");
+                if (parts.length < 2) continue;
+                
+                String mountPoint = parts[1];
+                // 只接受 /storage/XXXX-XXXX 格式
+                if (mountPoint.matches("/storage/[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}")) {
+                    File sdCard = new File(mountPoint);
+                    if (sdCard.exists() && sdCard.isDirectory() && sdCard.canRead()) {
+                        AppLog.d(TAG, "通过 /proc/mounts 找到SD卡: " + mountPoint);
+                        reader.close();
+                        return sdCard;
+                    }
+                }
+            }
+            reader.close();
+        } catch (Exception e) {
+            // 忽略错误
+        }
+        return null;
+    }
+    
+    /**
+     * 方法2：通过标准 API getExternalFilesDirs 获取 SD 卡
      * 只接受 /storage/XXXX-XXXX 格式的路径
      */
     private static File getSdCardFromExternalFilesDirs(Context context) {
@@ -295,7 +327,7 @@ public class StorageHelper {
     }
     
     /**
-     * 方法2：扫描 /storage/ 目录查找 SD 卡
+     * 方法3：扫描 /storage/ 目录查找 SD 卡
      * 简化版：只扫描一次，只识别 XXXX-XXXX 格式
      */
     private static File getSdCardFromStorageDir() {
@@ -322,25 +354,6 @@ public class StorageHelper {
         return null;
     }
     
-    /**
-     * 方法3：检查常见的 SD 卡挂载点（仅 /mnt/ 下的传统路径）
-     */
-    private static File getSdCardFromCommonPaths() {
-        String[] commonPaths = {
-            "/mnt/sdcard1",
-            "/mnt/external_sd",
-            "/mnt/extSdCard"
-        };
-        
-        for (String path : commonPaths) {
-            File file = new File(path);
-            if (file.exists() && file.isDirectory() && file.canRead()) {
-                AppLog.d(TAG, "通过 /mnt/ 路径找到SD卡: " + file.getAbsolutePath());
-                return file;
-            }
-        }
-        return null;
-    }
     
     /**
      * 获取所有检测到的存储设备信息（用于调试）
